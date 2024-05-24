@@ -8,15 +8,16 @@ import { Request } from './request'
 const server = net.createServer((socket) => {
   socket.on('data', (request) => {
     const res = new Response(socket)
-    const { httpMethod, routes, findHeaders, body } = new Request(request)
+    const req = new Request(request)
+    const routes = req.routes
 
-    if (httpMethod === 'GET') {
+    if (req.httpMethod === 'GET') {
       if (!routes[1]) {
         return res.send({ status: 'OK', statusCode: 200 })
       }
 
       if (routes[1] === 'echo' && routes[2]) {
-        const acceptEncoding = findHeaders('accept-encoding:')
+        const acceptEncoding = req.findHeaders('accept-encoding:')
 
         if (acceptEncoding) {
           const encodings = acceptEncoding
@@ -60,7 +61,7 @@ const server = net.createServer((socket) => {
       }
 
       if (routes[1] === 'user-agent') {
-        const userAgentValue = findHeaders('user-agent:')
+        const userAgentValue = req.findHeaders('user-agent:')
 
         if (!userAgentValue) {
           return res.send({ status: 'Not Found', statusCode: 404 })
@@ -116,12 +117,12 @@ const server = net.createServer((socket) => {
       }
     }
 
-    if (httpMethod === 'POST') {
+    if (req.httpMethod === 'POST') {
       if (!routes[1]) {
         return res.send({ status: 'OK', statusCode: 200 })
       }
 
-      if (!body) {
+      if (!req.body) {
         return res.send({ status: 'Not Found', statusCode: 404 })
       }
 
@@ -131,7 +132,7 @@ const server = net.createServer((socket) => {
         const filePath = directory[directory.length - 1] + '/' + fileName
 
         try {
-          fs.writeFileSync(filePath, body)
+          fs.writeFileSync(filePath, req.body)
         } catch (err) {
           return res.send({
             status: 'Internal error saving the file.',

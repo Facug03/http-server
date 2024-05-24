@@ -1,5 +1,5 @@
 export class Request {
-  public request: string
+  private request: string
   public httpMethod: string
   public routes: string[]
   public body: string | undefined
@@ -7,22 +7,28 @@ export class Request {
   constructor(request: Buffer) {
     const bufferToString = request.toString()
     this.request = bufferToString
-    this.httpMethod = bufferToString.split(' ')[0]
-    this.routes = this.getRoutes()
-    this.body = bufferToString.split('\r\n\r\n')[1]
+
+    const [headersPart, bodyPart] = bufferToString.split('\r\n\r\n')
+    const requestLine = headersPart.split('\r\n')[0]
+
+    this.httpMethod = this.extractHttpMethod(requestLine)
+    this.routes = this.extractRoutes(requestLine)
+    this.body = bodyPart
   }
 
-  private getRoutes() {
-    const [_, path] = this.request.split(' ')
-    const routes = path.split('/')
-
-    return routes
+  private extractHttpMethod(requestLine: string): string {
+    return requestLine.split(' ')[0]
   }
 
-  public findHeaders(header: string) {
+  private extractRoutes(requestLine: string): string[] {
+    const path = requestLine.split(' ')[1]
+    return path.split('/').filter(Boolean) // Eliminar elementos vacíos
+  }
+
+  public findHeaders(header: string): string {
     const headers = this.request.split('\r\n')
     const headerFound = headers
-      .find((item) => item.toLowerCase().includes(header.toLowerCase()))
+      .find((item) => item.toLowerCase().startsWith(header.toLowerCase() + ':'))
       ?.split(':')
       ?.slice(1)
       ?.join('')
