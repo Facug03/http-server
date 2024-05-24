@@ -1,10 +1,9 @@
 import net from 'net'
+import fs from 'node:fs'
 
 const server = net.createServer((socket) => {
   socket.on('data', (data) => {
     const bufferToString = data.toString()
-
-    // console.log(bufferToString)
 
     if (bufferToString.includes('GET /')) {
       const [_, path] = bufferToString.split(' ')
@@ -52,6 +51,32 @@ const server = net.createServer((socket) => {
         return socket.end()
       }
 
+      if (routes[1] === 'files' && routes[2]) {
+        const filePath = `./${routes[2]}`
+
+        fs.stat(filePath, (err, stats) => {
+          if (err) {
+            socket.write('HTTP/1.1 404 Not Found\r\n\r\n')
+            socket.end()
+
+            return
+          }
+
+          if (!stats.isFile()) {
+            socket.write('HTTP/1.1 404 Not Found\r\n\r\n')
+            socket.end()
+
+            return
+          }
+
+          socket.write(
+            `HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: ${
+              fs.statSync(filePath).size
+            }\r\n\r\n${fs.readFileSync(filePath).toString()}`
+          )
+        })
+      }
+
       socket.write('HTTP/1.1 404 Not Found\r\n\r\n')
 
       return socket.end()
@@ -62,10 +87,6 @@ const server = net.createServer((socket) => {
   })
 })
 
-// You can use print statements as follows for debugging, they'll be visible when running tests.
-console.log('Logs from your program will appear here!')
-
-// Uncomment this to pass the first stage
 server.listen(4221, 'localhost', () => {
   console.log('Server is running on port 4221')
 })
