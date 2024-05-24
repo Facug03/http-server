@@ -117,7 +117,7 @@ const server = net.createServer((socket) => {
           })
         }
 
-        return res.send({ status: 'OK', statusCode: 201 })
+        return res.send({ status: 'Created', statusCode: 201 })
       }
     }
 
