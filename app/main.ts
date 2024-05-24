@@ -94,6 +94,33 @@ const server = net.createServer((socket) => {
       }
     }
 
+    if (bufferToString.includes('POST /')) {
+      const [_, path] = bufferToString.split(' ')
+      const routes = path.split('/')
+      const body = bufferToString.split('\r\n\r\n')[1]
+
+      if (!routes[1]) {
+        return res.send({ status: 'OK', statusCode: 200 })
+      }
+
+      if (routes[1] === 'files' && routes[2]) {
+        const fileName = routes[2]
+        const directory = process.argv
+        const filePath = directory[directory.length - 1] + '/' + fileName
+
+        try {
+          fs.writeFileSync(filePath, body)
+        } catch (err) {
+          return res.send({
+            status: 'Internal error saving the file.',
+            statusCode: 500,
+          })
+        }
+
+        return res.send({ status: 'OK', statusCode: 201 })
+      }
+    }
+
     return res.send({ status: 'Not Found', statusCode: 404 })
   })
 })
