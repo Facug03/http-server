@@ -6,14 +6,14 @@ export class Request {
 
   constructor(request: Buffer) {
     const bufferToString = request.toString()
-    this.request = bufferToString.toString()
+    this.request = bufferToString
     this.httpMethod = bufferToString.split(' ')[0]
     this.routes = this.getRoutes()
     this.body = bufferToString.split('\r\n\r\n')[1]
   }
 
   private getRoutes() {
-    const [_, path] = this.request.toString().split(' ')
+    const [_, path] = this.request.split(' ')
     const routes = path.split('/')
 
     return routes
