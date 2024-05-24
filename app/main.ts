@@ -2,29 +2,21 @@ import net from 'net'
 import fs from 'node:fs'
 import zlib from 'node:zlib'
 
-import { Response } from './res'
+import { Response } from './response'
+import { Request } from './request'
 
 const server = net.createServer((socket) => {
-  socket.on('data', (data) => {
+  socket.on('data', (request) => {
     const res = new Response(socket)
-    const bufferToString = data.toString()
+    const { httpMethod, routes, findHeaders, body } = new Request(request)
 
-    if (bufferToString.includes('GET /')) {
-      const [_, path] = bufferToString.split(' ')
-      const routes = path.split('/')
-      const headers = bufferToString.split('\r\n')
-
+    if (httpMethod === 'GET') {
       if (!routes[1]) {
         return res.send({ status: 'OK', statusCode: 200 })
       }
 
       if (routes[1] === 'echo' && routes[2]) {
-        const acceptEncoding = headers
-          .find((header) => header.toLowerCase().includes('accept-encoding:'))
-          ?.split(':')
-          ?.slice(1)
-          ?.join('')
-          ?.trim()
+        const acceptEncoding = findHeaders('accept-encoding:')
 
         if (acceptEncoding) {
           const encodings = acceptEncoding
@@ -68,15 +60,7 @@ const server = net.createServer((socket) => {
       }
 
       if (routes[1] === 'user-agent') {
-        const userAgent = headers.find((header) =>
-          header.toLowerCase().includes('user-agent:')
-        )
-
-        if (!userAgent) {
-          return res.send({ status: 'Not Found', statusCode: 404 })
-        }
-
-        const userAgentValue = userAgent.split(':')?.slice(1)?.join('')?.trim()
+        const userAgentValue = findHeaders('user-agent:')
 
         if (!userAgentValue) {
           return res.send({ status: 'Not Found', statusCode: 404 })
@@ -132,13 +116,13 @@ const server = net.createServer((socket) => {
       }
     }
 
-    if (bufferToString.includes('POST /')) {
-      const [_, path] = bufferToString.split(' ')
-      const routes = path.split('/')
-      const body = bufferToString.split('\r\n\r\n')[1]
-
+    if (httpMethod === 'POST') {
       if (!routes[1]) {
         return res.send({ status: 'OK', statusCode: 200 })
+      }
+
+      if (!body) {
+        return res.send({ status: 'Not Found', statusCode: 404 })
       }
 
       if (routes[1] === 'files' && routes[2]) {
