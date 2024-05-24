@@ -54,7 +54,10 @@ const server = net.createServer((socket) => {
       if (routes[1] === 'files' && routes[2]) {
         const filePath = `./${routes[2]}`
 
+        console.log(filePath)
+
         fs.stat(filePath, (err, stats) => {
+          console.log(err, stats)
           if (err) {
             socket.write('HTTP/1.1 404 Not Found\r\n\r\n')
             socket.end()
@@ -62,19 +65,30 @@ const server = net.createServer((socket) => {
             return
           }
 
-          if (!stats.isFile()) {
-            socket.write('HTTP/1.1 404 Not Found\r\n\r\n')
+          if (stats.isDirectory()) {
+            socket.write(
+              `HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: ${
+                stats.size
+              }\r\n\r\n${fs.readdirSync(filePath).toString()}`
+            )
             socket.end()
 
             return
           }
 
-          socket.write(
-            `HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: ${
-              fs.statSync(filePath).size
-            }\r\n\r\n${fs.readFileSync(filePath).toString()}`
-          )
+          if (stats.isFile()) {
+            socket.write(
+              `HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: ${
+                stats.size
+              }\r\n\r\n${fs.readFileSync(filePath).toString()}`
+            )
+            socket.end()
+
+            return
+          }
         })
+
+        return
       }
 
       socket.write('HTTP/1.1 404 Not Found\r\n\r\n')
