@@ -52,41 +52,43 @@ const server = net.createServer((socket) => {
       }
 
       if (routes[1] === 'files' && routes[2]) {
-        const filePath = `./${routes[2]}`
+        const filePath = routes[2]
+        const directory = process.argv
 
-        console.log(filePath)
+        fs.stat(
+          directory[directory.length - 1] + '/' + filePath,
+          (err, stats) => {
+            console.log(err, stats)
+            if (err) {
+              socket.write('HTTP/1.1 404 Not Found\r\n\r\n')
+              socket.end()
 
-        fs.stat(filePath, (err, stats) => {
-          console.log(err, stats)
-          if (err) {
-            socket.write('HTTP/1.1 404 Not Found\r\n\r\n')
-            socket.end()
+              return
+            }
 
-            return
+            if (stats.isDirectory()) {
+              socket.write(
+                `HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: ${
+                  stats.size
+                }\r\n\r\n${fs.readdirSync(filePath).toString()}`
+              )
+              socket.end()
+
+              return
+            }
+
+            if (stats.isFile()) {
+              socket.write(
+                `HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: ${
+                  stats.size
+                }\r\n\r\n${fs.readFileSync(filePath).toString()}`
+              )
+              socket.end()
+
+              return
+            }
           }
-
-          if (stats.isDirectory()) {
-            socket.write(
-              `HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: ${
-                stats.size
-              }\r\n\r\n${fs.readdirSync(filePath).toString()}`
-            )
-            socket.end()
-
-            return
-          }
-
-          if (stats.isFile()) {
-            socket.write(
-              `HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: ${
-                stats.size
-              }\r\n\r\n${fs.readFileSync(filePath).toString()}`
-            )
-            socket.end()
-
-            return
-          }
-        })
+        )
 
         return
       }
