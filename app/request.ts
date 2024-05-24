@@ -1,5 +1,5 @@
 export class Request {
-  private request: string
+  public request: string
   public httpMethod: string
   public routes: string[]
   public body: string | undefined
