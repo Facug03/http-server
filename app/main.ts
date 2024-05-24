@@ -10,6 +10,8 @@ const server = net.createServer((socket) => {
       const [_, path] = bufferToString.split(' ')
       const route = path.split('/')[2]
 
+      console.log(path)
+
       if (!route) {
         socket.write('HTTP/1.1 404 Not Found\r\n\r\n')
         return socket.end()
