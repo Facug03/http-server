@@ -20,7 +20,7 @@ export class Request {
   }
 
   public findHeaders(header: string) {
-    const headers = this.request.toString().split('\r\n')
+    const headers = this.request.split('\r\n')
     const headerFound = headers
       .find((item) => item.toLowerCase().includes(header.toLowerCase()))
       ?.split(':')
