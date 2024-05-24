@@ -15,7 +15,7 @@ export class Response {
   }: {
     statusCode: number
     status: string
-    body?: string
+    body?: string | Buffer
     headers?: Record<string, string>
   }) {
     const formattedHeaders = this.formatHeaders(headers)
@@ -23,8 +23,9 @@ export class Response {
     this.socket.write(
       `HTTP/1.1 ${statusCode} ${status}${
         formattedHeaders && `\r\n${formattedHeaders}`
-      }\r\n\r\n${body}`
+      }\r\n\r\n`
     )
+    this.socket.write(body)
     this.socket.end()
   }
 

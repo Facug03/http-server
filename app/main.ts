@@ -1,44 +1,69 @@
 import net from 'net'
 import fs from 'node:fs'
-import { Response } from './res'
+import zlib from 'node:zlib'
+
+import { Response } from './response'
+import { Request } from './request'
 
 const server = net.createServer((socket) => {
-  socket.on('data', (data) => {
+  socket.on('data', (request) => {
     const res = new Response(socket)
-    const bufferToString = data.toString()
+    const req = new Request(request)
+    const routes = req.routes
 
-    if (bufferToString.includes('GET /')) {
-      const [_, path] = bufferToString.split(' ')
-      const routes = path.split('/')
-
-      if (!routes[1]) {
+    if (req.httpMethod === 'GET') {
+      if (!routes[0]) {
         return res.send({ status: 'OK', statusCode: 200 })
       }
 
-      if (routes[1] === 'echo' && routes[2]) {
+      console.log({ routes })
+
+      if (routes[0] === 'echo' && routes[1]) {
+        const acceptEncoding = req.findHeaders('accept-encoding')
+
+        if (acceptEncoding) {
+          const encodings = acceptEncoding
+            .split(',')
+            .map((encoding) => encoding.trim())
+
+          if (encodings.includes('gzip')) {
+            zlib.gzip(Buffer.from(routes[1], 'utf-8'), (err, data) => {
+              if (err) {
+                return res.send({
+                  status: 'Internal server error',
+                  statusCode: 500,
+                })
+              }
+
+              return res.send({
+                status: 'OK',
+                statusCode: 200,
+                headers: {
+                  'Content-Type': 'text/plain',
+                  'Content-Length': data.length.toString(),
+                  'Content-Encoding': 'gzip',
+                },
+                body: data,
+              })
+            })
+
+            return
+          }
+        }
+
         return res.send({
           status: 'OK',
           statusCode: 200,
           headers: {
             'Content-Type': 'text/plain',
-            'Content-Length': routes[2].length.toString(),
+            'Content-Length': routes[1].length.toString(),
           },
-          body: routes[2],
+          body: routes[1],
         })
       }
 
-      if (routes[1] === 'user-agent') {
-        const headers = bufferToString.split('\r\n')
-
-        const userAgent = headers.find((header) =>
-          header.toLowerCase().includes('user-agent:')
-        )
-
-        if (!userAgent) {
-          return res.send({ status: 'Not Found', statusCode: 404 })
-        }
-
-        const userAgentValue = userAgent.split(':')?.slice(1)?.join('')?.trim()
+      if (routes[0] === 'user-agent') {
+        const userAgentValue = req.findHeaders('user-agent')
 
         if (!userAgentValue) {
           return res.send({ status: 'Not Found', statusCode: 404 })
@@ -55,8 +80,8 @@ const server = net.createServer((socket) => {
         })
       }
 
-      if (routes[1] === 'files' && routes[2]) {
-        const fileName = routes[2]
+      if (routes[0] === 'files' && routes[1]) {
+        const fileName = routes[1]
         const directory = process.argv
         const filePath = directory[directory.length - 1] + '/' + fileName
 
@@ -91,6 +116,33 @@ const server = net.createServer((socket) => {
         })
 
         return
+      }
+    }
+
+    if (req.httpMethod === 'POST') {
+      if (!routes[0]) {
+        return res.send({ status: 'OK', statusCode: 200 })
+      }
+
+      if (!req.body) {
+        return res.send({ status: 'Not Found', statusCode: 404 })
+      }
+
+      if (routes[0] === 'files' && routes[1]) {
+        const fileName = routes[1]
+        const directory = process.argv
+        const filePath = directory[directory.length - 1] + '/' + fileName
+
+        try {
+          fs.writeFileSync(filePath, req.body)
+        } catch (err) {
+          return res.send({
+            status: 'Internal error saving the file.',
+            statusCode: 500,
+          })
+        }
+
+        return res.send({ status: 'Created', statusCode: 201 })
       }
     }
 
