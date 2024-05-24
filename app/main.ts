@@ -1,5 +1,7 @@
 import net from 'net'
 import fs from 'node:fs'
+import zlib from 'node:zlib'
+
 import { Response } from './res'
 
 const server = net.createServer((socket) => {
@@ -30,16 +32,29 @@ const server = net.createServer((socket) => {
             .map((encoding) => encoding.trim())
 
           if (encodings.includes('gzip')) {
-            return res.send({
-              status: 'OK',
-              statusCode: 200,
-              headers: {
-                'Content-Type': 'text/plain',
-                'Content-Length': routes[2].length.toString(),
-                'Content-Encoding': 'gzip',
-              },
-              body: routes[2],
+            zlib.gzip(routes[2], (err, data) => {
+              if (err) {
+                return res.send({
+                  status: 'Internal server error',
+                  statusCode: 500,
+                })
+              }
+
+              console.log(data.length.toString(), data.toString('hex'))
+
+              return res.send({
+                status: 'OK',
+                statusCode: 200,
+                headers: {
+                  'Content-Type': 'text/plain',
+                  'Content-Length': data.length.toString(),
+                  'Content-Encoding': 'gzip',
+                },
+                body: data.toString('hex'),
+              })
             })
+
+            return
           }
         }
 
