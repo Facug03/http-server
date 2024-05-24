@@ -32,15 +32,13 @@ const server = net.createServer((socket) => {
             .map((encoding) => encoding.trim())
 
           if (encodings.includes('gzip')) {
-            zlib.gzip(routes[2], (err, data) => {
+            zlib.gzip(Buffer.from(routes[2], 'utf-8'), (err, data) => {
               if (err) {
                 return res.send({
                   status: 'Internal server error',
                   statusCode: 500,
                 })
               }
-
-              console.log(data.length.toString(), data.toString('hex'))
 
               return res.send({
                 status: 'OK',
