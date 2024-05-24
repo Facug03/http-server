@@ -17,7 +17,7 @@ const server = net.createServer((socket) => {
       }
 
       if (routes[1] === 'echo' && routes[2]) {
-        const acceptEncoding = req.findHeaders('accept-encoding:')
+        const acceptEncoding = req.findHeaders('accept-encoding')
 
         if (acceptEncoding) {
           const encodings = acceptEncoding
@@ -61,7 +61,7 @@ const server = net.createServer((socket) => {
       }
 
       if (routes[1] === 'user-agent') {
-        const userAgentValue = req.findHeaders('user-agent:')
+        const userAgentValue = req.findHeaders('user-agent')
 
         if (!userAgentValue) {
           return res.send({ status: 'Not Found', statusCode: 404 })
