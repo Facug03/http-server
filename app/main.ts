@@ -1,6 +1,6 @@
 import net from 'net'
 import fs from 'node:fs'
-import { Res } from './res'
+import { Response } from './res'
 
 const server = net.createServer((socket) => {
   socket.on('data', (data) => {

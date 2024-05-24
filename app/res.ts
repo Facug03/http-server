@@ -1,6 +1,6 @@
 import net from 'net'
 
-export class Res {
+export class Response {
   private socket: net.Socket
 
   constructor(socket: net.Socket) {
