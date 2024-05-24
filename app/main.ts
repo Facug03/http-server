@@ -50,7 +50,7 @@ const server = net.createServer((socket) => {
                   'Content-Length': data.length.toString(),
                   'Content-Encoding': 'gzip',
                 },
-                body: data.toString('hex'),
+                body: data,
               })
             })
 
