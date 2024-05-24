@@ -24,18 +24,23 @@ const server = net.createServer((socket) => {
           ?.join('')
           ?.trim()
 
-        if (acceptEncoding && acceptEncoding.includes('gzip')) {
-          console.log(acceptEncoding)
-          return res.send({
-            status: 'OK',
-            statusCode: 200,
-            headers: {
-              'Content-Encoding': acceptEncoding,
-              'Content-Type': 'text/plain',
-              'Content-Length': routes[2].length.toString(),
-            },
-            body: routes[2],
-          })
+        if (acceptEncoding) {
+          const encodings = acceptEncoding
+            .split(',')
+            .map((encoding) => encoding.trim())
+
+          if (encodings.includes('gzip')) {
+            return res.send({
+              status: 'OK',
+              statusCode: 200,
+              headers: {
+                'Content-Type': 'text/plain',
+                'Content-Length': routes[2].length.toString(),
+                'Content-Encoding': acceptEncoding,
+              },
+              body: routes[2],
+            })
+          }
         }
 
         return res.send({
