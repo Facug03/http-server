@@ -22,7 +22,7 @@ export class Response {
 
     this.socket.write(
       `HTTP/1.1 ${statusCode} ${status} ${
-        formattedHeaders && `'\r\n'${formattedHeaders}`
+        formattedHeaders && `\r\n${formattedHeaders}`
       } \r\n\r\n${body}`
     )
     this.socket.end()
