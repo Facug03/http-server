@@ -10,12 +10,34 @@ const server = net.createServer((socket) => {
     if (bufferToString.includes('GET /')) {
       const [_, path] = bufferToString.split(' ')
       const routes = path.split('/')
+      const headers = bufferToString.split('\r\n')
 
       if (!routes[1]) {
         return res.send({ status: 'OK', statusCode: 200 })
       }
 
       if (routes[1] === 'echo' && routes[2]) {
+        const acceptEncoding = headers
+          .find((header) => header.toLowerCase().includes('accept-encoding:'))
+          ?.split(':')
+          ?.slice(1)
+          ?.join('')
+          ?.trim()
+
+        if (acceptEncoding && acceptEncoding.includes('gzip')) {
+          console.log(acceptEncoding)
+          return res.send({
+            status: 'OK',
+            statusCode: 200,
+            headers: {
+              'Content-Encoding': acceptEncoding,
+              'Content-Type': 'text/plain',
+              'Content-Length': routes[2].length.toString(),
+            },
+            body: routes[2],
+          })
+        }
+
         return res.send({
           status: 'OK',
           statusCode: 200,
@@ -28,8 +50,6 @@ const server = net.createServer((socket) => {
       }
 
       if (routes[1] === 'user-agent') {
-        const headers = bufferToString.split('\r\n')
-
         const userAgent = headers.find((header) =>
           header.toLowerCase().includes('user-agent:')
         )
