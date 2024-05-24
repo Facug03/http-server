@@ -6,25 +6,23 @@ const server = net.createServer((socket) => {
 
     // console.log(bufferToString)
 
-    if (bufferToString.includes('GET /echo')) {
+    if (bufferToString.includes('GET /')) {
       const [_, path] = bufferToString.split(' ')
-      const route = path.split('/')[2]
+      const routes = path.split('/')
 
-      console.log(path)
-
-      if (!route) {
-        socket.write('HTTP/1.1 404 Not Found\r\n\r\n')
+      if (!routes[1]) {
+        socket.write('HTTP/1.1 200 OK\r\n\r\n')
         return socket.end()
       }
 
-      socket.write(
-        `HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ${route.length}\r\n\r\n${route}`
-      )
-    }
+      if (routes[1] === 'echo' && routes[2]) {
+        socket.write(
+          `HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ${routes[2].length}\r\n\r\n${routes[2]}`
+        )
+        return socket.end()
+      }
 
-    if (bufferToString.includes('GET /')) {
-      socket.write('HTTP/1.1 200 OK\r\n\r\n')
-      socket.end()
+      socket.write('HTTP/1.1 404 Not Found\r\n\r\n')
     }
 
     socket.write('HTTP/1.1 404 Not Found\r\n\r\n')
