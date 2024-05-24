@@ -22,7 +22,39 @@ const server = net.createServer((socket) => {
         return socket.end()
       }
 
+      if (routes[1] === 'user-agent') {
+        const headers = bufferToString.split('\r\n')
+        console.log({ headers })
+        const userAgent = headers.find((header) =>
+          header.toLowerCase().includes('user-agent:')
+        )
+
+        console.log(userAgent)
+
+        if (!userAgent) {
+          socket.write('HTTP/1.1 404 Not Found\r\n\r\n')
+
+          return socket.end()
+        }
+
+        const userAgentValue = userAgent.split(':')?.slice(1)?.join('')?.trim()
+
+        if (!userAgentValue) {
+          socket.write('HTTP/1.1 404 Not Found\r\n\r\n')
+
+          return socket.end()
+        }
+
+        socket.write(
+          `HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ${userAgentValue.length}\r\n\r\n${userAgentValue}`
+        )
+
+        return socket.end()
+      }
+
       socket.write('HTTP/1.1 404 Not Found\r\n\r\n')
+
+      return socket.end()
     }
 
     socket.write('HTTP/1.1 404 Not Found\r\n\r\n')
