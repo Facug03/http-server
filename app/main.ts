@@ -4,7 +4,7 @@ import { Response } from './res'
 
 const server = net.createServer((socket) => {
   socket.on('data', (data) => {
-    const res = new Res(socket)
+    const res = new Response(socket)
     const bufferToString = data.toString()
 
     if (bufferToString.includes('GET /')) {
