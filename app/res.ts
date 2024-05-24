@@ -21,7 +21,7 @@ export class Response {
     const formattedHeaders = this.formatHeaders(headers)
 
     this.socket.write(
-      `HTTP/1.1 ${statusCode} ${status} ${
+      `HTTP/1.1 ${statusCode} ${status}${
         formattedHeaders && `\r\n${formattedHeaders}`
       } \r\n\r\n${body}`
     )
