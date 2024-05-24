@@ -1,8 +1,10 @@
 import net from 'net'
 import fs from 'node:fs'
+import { Res } from './res'
 
 const server = net.createServer((socket) => {
   socket.on('data', (data) => {
+    const res = new Res(socket)
     const bufferToString = data.toString()
 
     if (bufferToString.includes('GET /')) {
@@ -10,45 +12,47 @@ const server = net.createServer((socket) => {
       const routes = path.split('/')
 
       if (!routes[1]) {
-        socket.write('HTTP/1.1 200 OK\r\n\r\n')
-        return socket.end()
+        return res.send({ status: 'OK', statusCode: 200 })
       }
 
       if (routes[1] === 'echo' && routes[2]) {
-        socket.write(
-          `HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ${routes[2].length}\r\n\r\n${routes[2]}`
-        )
-        return socket.end()
+        return res.send({
+          status: 'OK',
+          statusCode: 200,
+          headers: {
+            'Content-Type': 'text/plain',
+            'Content-Length': routes[2].length.toString(),
+          },
+          body: routes[2],
+        })
       }
 
       if (routes[1] === 'user-agent') {
         const headers = bufferToString.split('\r\n')
-        console.log({ headers })
+
         const userAgent = headers.find((header) =>
           header.toLowerCase().includes('user-agent:')
         )
 
-        console.log(userAgent)
-
         if (!userAgent) {
-          socket.write('HTTP/1.1 404 Not Found\r\n\r\n')
-
-          return socket.end()
+          return res.send({ status: 'Not Found', statusCode: 404 })
         }
 
         const userAgentValue = userAgent.split(':')?.slice(1)?.join('')?.trim()
 
         if (!userAgentValue) {
-          socket.write('HTTP/1.1 404 Not Found\r\n\r\n')
-
-          return socket.end()
+          return res.send({ status: 'Not Found', statusCode: 404 })
         }
 
-        socket.write(
-          `HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ${userAgentValue.length}\r\n\r\n${userAgentValue}`
-        )
-
-        return socket.end()
+        return res.send({
+          status: 'OK',
+          statusCode: 200,
+          headers: {
+            'Content-Type': 'text/plain',
+            'Content-Length': userAgentValue.length.toString(),
+          },
+          body: userAgentValue,
+        })
       }
 
       if (routes[1] === 'files' && routes[2]) {
@@ -58,45 +62,39 @@ const server = net.createServer((socket) => {
 
         fs.stat(filePath, (err, stats) => {
           if (err) {
-            socket.write('HTTP/1.1 404 Not Found\r\n\r\n')
-            socket.end()
-
-            return
+            return res.send({ status: 'Not Found', statusCode: 404 })
           }
 
           if (stats.isDirectory()) {
-            socket.write(
-              `HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: ${
-                stats.size
-              }\r\n\r\n${fs.readdirSync(filePath).toString()}`
-            )
-            socket.end()
-
-            return
+            return res.send({
+              status: 'OK',
+              statusCode: 200,
+              headers: {
+                'Content-Type': 'application/octet-stream',
+                'Content-Length': stats.size.toString(),
+              },
+              body: fs.readdirSync(filePath).toString(),
+            })
           }
 
           if (stats.isFile()) {
-            socket.write(
-              `HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: ${
-                stats.size
-              }\r\n\r\n${fs.readFileSync(filePath).toString()}`
-            )
-            socket.end()
-
-            return
+            return res.send({
+              status: 'OK',
+              statusCode: 200,
+              headers: {
+                'Content-Type': 'application/octet-stream',
+                'Content-Length': stats.size.toString(),
+              },
+              body: fs.readFileSync(filePath).toString(),
+            })
           }
         })
 
         return
       }
-
-      socket.write('HTTP/1.1 404 Not Found\r\n\r\n')
-
-      return socket.end()
     }
 
-    socket.write('HTTP/1.1 404 Not Found\r\n\r\n')
-    socket.end()
+    return res.send({ status: 'Not Found', statusCode: 404 })
   })
 })
 
