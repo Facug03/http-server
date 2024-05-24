@@ -22,7 +22,7 @@ export class Request {
 
   private extractRoutes(requestLine: string): string[] {
     const path = requestLine.split(' ')[1]
-    return path.split('/').filter(Boolean) // Eliminar elementos vacíos
+    return path.split('/').filter(Boolean)
   }
 
   public findHeaders(header: string): string {
@@ -33,6 +33,8 @@ export class Request {
       ?.slice(1)
       ?.join('')
       ?.trim()
+
+    console.log({ headerFound })
 
     return headerFound ?? ''
   }

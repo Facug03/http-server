@@ -12,11 +12,13 @@ const server = net.createServer((socket) => {
     const routes = req.routes
 
     if (req.httpMethod === 'GET') {
-      if (!routes[1]) {
+      if (!routes[0]) {
         return res.send({ status: 'OK', statusCode: 200 })
       }
 
-      if (routes[1] === 'echo' && routes[2]) {
+      console.log({ routes })
+
+      if (routes[0] === 'echo' && routes[1]) {
         const acceptEncoding = req.findHeaders('accept-encoding')
 
         if (acceptEncoding) {
@@ -25,7 +27,7 @@ const server = net.createServer((socket) => {
             .map((encoding) => encoding.trim())
 
           if (encodings.includes('gzip')) {
-            zlib.gzip(Buffer.from(routes[2], 'utf-8'), (err, data) => {
+            zlib.gzip(Buffer.from(routes[1], 'utf-8'), (err, data) => {
               if (err) {
                 return res.send({
                   status: 'Internal server error',
@@ -54,13 +56,13 @@ const server = net.createServer((socket) => {
           statusCode: 200,
           headers: {
             'Content-Type': 'text/plain',
-            'Content-Length': routes[2].length.toString(),
+            'Content-Length': routes[1].length.toString(),
           },
-          body: routes[2],
+          body: routes[1],
         })
       }
 
-      if (routes[1] === 'user-agent') {
+      if (routes[0] === 'user-agent') {
         const userAgentValue = req.findHeaders('user-agent')
 
         if (!userAgentValue) {
@@ -78,8 +80,8 @@ const server = net.createServer((socket) => {
         })
       }
 
-      if (routes[1] === 'files' && routes[2]) {
-        const fileName = routes[2]
+      if (routes[0] === 'files' && routes[1]) {
+        const fileName = routes[1]
         const directory = process.argv
         const filePath = directory[directory.length - 1] + '/' + fileName
 
@@ -118,7 +120,7 @@ const server = net.createServer((socket) => {
     }
 
     if (req.httpMethod === 'POST') {
-      if (!routes[1]) {
+      if (!routes[0]) {
         return res.send({ status: 'OK', statusCode: 200 })
       }
 
@@ -126,8 +128,8 @@ const server = net.createServer((socket) => {
         return res.send({ status: 'Not Found', statusCode: 404 })
       }
 
-      if (routes[1] === 'files' && routes[2]) {
-        const fileName = routes[2]
+      if (routes[0] === 'files' && routes[1]) {
+        const fileName = routes[1]
         const directory = process.argv
         const filePath = directory[directory.length - 1] + '/' + fileName
 
