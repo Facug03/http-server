@@ -36,7 +36,7 @@ const server = net.createServer((socket) => {
               headers: {
                 'Content-Type': 'text/plain',
                 'Content-Length': routes[2].length.toString(),
-                'Content-Encoding': acceptEncoding,
+                'Content-Encoding': 'gzip',
               },
               body: routes[2],
             })
